@@ -1,4 +1,5 @@
 const { Client, LocalAuth, NoAuth } = require('whatsapp-web.js');
+const puppeteer = require('puppeteer');
 const express = require('express');
 const bodyParser = require('body-parser');
 const QRCode = require('qrcode');
@@ -34,13 +35,14 @@ const client = new Client({
             '--disable-features=VizDisplayCompositor',
             '--disable-extensions',
             '--disable-plugins',
-            '--disable-images',
             '--disable-default-apps',
             '--disable-background-timer-throttling',
             '--disable-backgrounding-occluded-windows',
             '--disable-renderer-backgrounding',
             '--disable-ipc-flooding-protection'
-        ]
+        ],
+        // Let Puppeteer download and use its own Chromium
+        executablePath: undefined
     }
 });
 
