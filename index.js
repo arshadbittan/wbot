@@ -1,14 +1,12 @@
 const { Client, LocalAuth, NoAuth } = require('whatsapp-web.js');
-const puppeteer = require('puppeteer');
 const express = require('express');
 const bodyParser = require('body-parser');
 const QRCode = require('qrcode');
 const SupabaseAuth = require('./supabase-auth');
 require('dotenv').config();
 
-// Remove problematic Puppeteer environment variables
-delete process.env.PUPPETEER_EXECUTABLE_PATH;
-delete process.env.PUPPETEER_SKIP_CHROMIUM_DOWNLOAD;
+// Configure for Render.com environment
+process.env.PUPPETEER_SKIP_CHROMIUM_DOWNLOAD = 'true';
 
 const app = express();
 app.use(bodyParser.json());
@@ -26,6 +24,7 @@ const client = new Client({
     }),
     puppeteer: {
         headless: true,
+        executablePath: process.env.NODE_ENV === 'production' ? '/usr/bin/chromium-browser' : undefined,
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
@@ -45,7 +44,6 @@ const client = new Client({
             '--disable-renderer-backgrounding',
             '--disable-ipc-flooding-protection'
         ]
-        // Remove executablePath completely to let Puppeteer auto-detect
     }
 });
 
