@@ -43,21 +43,19 @@
    - **Start Command**: `npm start`
    - **Instance Type**: `Free`
 
-4. **Add Environment Variables**
-   - `NODE_ENV`: `production`
-   - `PUPPETEER_SKIP_CHROMIUM_DOWNLOAD`: `true`
-   - `PUPPETEER_EXECUTABLE_PATH`: `/usr/bin/google-chrome-stable`
+4. **Set up Supabase (Required for Session Storage)**
+   - Follow [SUPABASE_SETUP.md](SUPABASE_SETUP.md) to create free Supabase project
+   - Get your `SUPABASE_URL` and `SUPABASE_ANON_KEY`
 
-5. **Enable Persistent Disk (Important for WhatsApp Session)**
-   - In your service settings, go to "Disks"
-   - Add a new disk:
-     - **Name**: `whatsapp-session-disk`
-     - **Mount Path**: `/app/whatsapp-session`
-     - **Size**: `1 GB` (free tier)
+5. **Add Environment Variables**
+   - `NODE_ENV`: `production`
+   - `SUPABASE_URL`: `https://your-project-id.supabase.co`
+   - `SUPABASE_ANON_KEY`: `your-supabase-anon-key`
 
 6. **Deploy**
    - Click "Create Web Service"
    - Wait for deployment (5-10 minutes)
+   - Check logs for "✅ Supabase session storage initialized"
 
 ## Step 3: Connect WhatsApp
 

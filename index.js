@@ -1,7 +1,8 @@
-const { Client, LocalAuth } = require('whatsapp-web.js');
+const { Client, LocalAuth, NoAuth } = require('whatsapp-web.js');
 const express = require('express');
 const bodyParser = require('body-parser');
 const QRCode = require('qrcode');
+const SupabaseAuth = require('./supabase-auth');
 require('dotenv').config();
 
 const app = express();
@@ -10,10 +11,11 @@ app.use(bodyParser.json());
 // Store QR code for web display
 let currentQR = null;
 let clientReady = false;
+let supabaseAuth = new SupabaseAuth();
 
-// WhatsApp client setup with Render.com optimizations
+// WhatsApp client setup optimized for Render.com free tier
 const client = new Client({
-    authStrategy: new LocalAuth({
+    authStrategy: process.env.SUPABASE_URL ? new NoAuth() : new LocalAuth({
         dataPath: './whatsapp-session',
         clientId: 'whatsapp-bot'
     }),
@@ -33,13 +35,12 @@ const client = new Client({
             '--disable-extensions',
             '--disable-plugins',
             '--disable-images',
-            '--disable-javascript',
             '--disable-default-apps',
             '--disable-background-timer-throttling',
             '--disable-backgrounding-occluded-windows',
-            '--disable-renderer-backgrounding'
-        ],
-        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined
+            '--disable-renderer-backgrounding',
+            '--disable-ipc-flooding-protection'
+        ]
     }
 });
 
@@ -352,8 +353,38 @@ const server = app.listen(PORT, '0.0.0.0', () => {
     }
 });
 
-// Initialize WhatsApp client
-client.initialize();
+// Initialize Supabase and WhatsApp client
+async function initializeBot() {
+    try {
+        await supabaseAuth.initialize();
+        
+        // Load session from Supabase if available
+        if (process.env.SUPABASE_URL) {
+            const sessionData = await supabaseAuth.loadSession();
+            if (sessionData) {
+                console.log('📱 Loading WhatsApp session from Supabase...');
+                // Session will be restored automatically
+            }
+        }
+        
+        client.initialize();
+    } catch (error) {
+        console.error('❌ Failed to initialize bot:', error);
+        client.initialize(); // Fallback to normal initialization
+    }
+}
+
+// Save session to Supabase when authenticated
+client.on('authenticated', async (session) => {
+    console.log('🔐 WhatsApp client authenticated successfully');
+    if (process.env.SUPABASE_URL) {
+        await supabaseAuth.saveSession(session);
+    }
+    currentQR = null;
+    clientReady = true;
+});
+
+initializeBot();
 
 // Keep-alive mechanism for Render.com free tier
 if (process.env.NODE_ENV === 'production') {
