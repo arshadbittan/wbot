@@ -6,6 +6,10 @@ const QRCode = require('qrcode');
 const SupabaseAuth = require('./supabase-auth');
 require('dotenv').config();
 
+// Remove problematic Puppeteer environment variables
+delete process.env.PUPPETEER_EXECUTABLE_PATH;
+delete process.env.PUPPETEER_SKIP_CHROMIUM_DOWNLOAD;
+
 const app = express();
 app.use(bodyParser.json());
 
@@ -40,9 +44,8 @@ const client = new Client({
             '--disable-backgrounding-occluded-windows',
             '--disable-renderer-backgrounding',
             '--disable-ipc-flooding-protection'
-        ],
-        // Let Puppeteer download and use its own Chromium
-        executablePath: undefined
+        ]
+        // Remove executablePath completely to let Puppeteer auto-detect
     }
 });
 
@@ -291,13 +294,13 @@ app.get('/qr-image', async (req, res) => {
         res.status(404).send('No QR code available');
         return;
     }
-    
+
     try {
         const qrBuffer = await QRCode.toBuffer(currentQR, {
             width: 300,
             margin: 2
         });
-        
+
         res.setHeader('Content-Type', 'image/png');
         res.send(qrBuffer);
     } catch (error) {
@@ -359,7 +362,7 @@ const server = app.listen(PORT, '0.0.0.0', () => {
 async function initializeBot() {
     try {
         await supabaseAuth.initialize();
-        
+
         // Load session from Supabase if available
         if (process.env.SUPABASE_URL) {
             const sessionData = await supabaseAuth.loadSession();
@@ -368,7 +371,7 @@ async function initializeBot() {
                 // Session will be restored automatically
             }
         }
-        
+
         client.initialize();
     } catch (error) {
         console.error('❌ Failed to initialize bot:', error);
